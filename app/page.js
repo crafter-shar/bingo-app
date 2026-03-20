@@ -54,7 +54,8 @@ export default function Home() {
   }
 
   return (
-    <main style={{ backgroundColor: '#292524', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', paddingTop: '80px', fontFamily: 'Inter, sans-serif' }}>
+    <main style={{ backgroundColor: '#292524', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', paddingTop: '80px', fontFamily: 'Inter, sans-serif' }}>
+      
 
       {/* Top content */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '48px', alignItems: 'center', width: '293px' }}>
@@ -146,7 +147,7 @@ export default function Home() {
 
       {/* Bottom upload - only show when not joining */}
       {!joining && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '16px 16px 24px', width: '360px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '16px 16px 48px', width: '360px', boxSizing: 'border-box' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#E7E5E4', fontSize: '16px', fontWeight: '500', cursor: 'pointer', padding: '8px 16px', borderRadius: '50px' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E7E5E4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

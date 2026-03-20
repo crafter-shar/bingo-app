@@ -18,6 +18,8 @@ export default function GamePage({ params }) {
   const [someoneWon, setSomeoneWon] = useState(null)
   const [winTime, setWinTime] = useState(null)
   const [gameOver, setGameOver] = useState(false)
+  const [facingMode, setFacingMode] = useState('environment')
+  const [zoom, setZoom] = useState(1)
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const channelRef = useRef(null)
@@ -65,9 +67,34 @@ export default function GamePage({ params }) {
 
   async function openCamera(index) {
     setSelectedSquare(index)
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+    setZoom(1)
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: facingMode } 
+    })
     videoRef.current.srcObject = stream
     videoRef.current.play()
+  }
+
+  async function flipCamera() {
+    const newFacingMode = facingMode === 'environment' ? 'user' : 'environment'
+    setFacingMode(newFacingMode)
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop())
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: newFacingMode } 
+      })
+      videoRef.current.srcObject = stream
+      videoRef.current.play()
+    }
+  }
+
+  async function changeZoom(direction) {
+    const newZoom = direction === 'in' ? Math.min(zoom + 0.5, 3) : Math.max(zoom - 0.5, 1)
+    setZoom(newZoom)
+    const track = videoRef.current?.srcObject?.getVideoTracks()[0]
+    if (track && track.getCapabilities().zoom) {
+      await track.applyConstraints({ advanced: [{ zoom: newZoom }] })
+    }
   }
 
   async function takePhoto() {
@@ -261,17 +288,44 @@ export default function GamePage({ params }) {
           {/* Camera preview + buttons all constrained to same width */}
           <div style={{ flex: 1, padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '0' }}>
-              <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', width: '100%', aspectRatio: '1' }}>
+              <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', width: '100%', aspectRatio: '1', position: 'relative' }}>
                 <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button
+                  onClick={flipCamera}
+                  style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: 'rgba(250,250,249,0.25)', border: 'none', borderRadius: '50px', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                >
+                  <img src="/switch-camera.png" alt="Flip camera" style={{ width: '24px', height: '24px' }} />
+                </button>
               </div>
               <canvas ref={canvasRef} style={{ display: 'none' }} />
-              <div style={{ padding: '16px 0 0' }}>
+             <div style={{ padding: '16px 0 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button
                   onClick={takePhoto}
                   style={{ backgroundColor: '#57534E', color: '#E5E5E5', border: 'none', borderRadius: '50px', padding: '10px 16px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', width: '100%' }}
                 >
                   Capture photo
                 </button>
+                <label
+                  style={{ backgroundColor: '#57534E', color: '#E5E5E5', border: 'none', borderRadius: '50px', padding: '10px 16px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', width: '100%', textAlign: 'center', boxSizing: 'border-box' }}
+                >
+                  Upload photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        videoRef.current?.srcObject?.getTracks().forEach(track => track.stop())
+                        setPreviewPhoto({ photo: reader.result, index: selectedSquare })
+                        setSelectedSquare(null)
+                      }
+                      reader.readAsDataURL(file)
+                    }}
+                  />
+                </label>
               </div>
               <div style={{ padding: '8px 0 0', display: 'flex', justifyContent: 'center' }}>
                 <button
@@ -308,7 +362,7 @@ export default function GamePage({ params }) {
               <div style={{ padding: '16px 0 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button
                   onClick={confirmPhoto}
-                  style={{ backgroundColor: '#57534E', color: '#E5E5E5', border: 'none', borderRadius: '50px', padding: '10px 16px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', width: '100%' }}
+                  style={{ backgroundColor: '#065F46', color: '#E5E5E5', border: 'none', borderRadius: '50px', padding: '10px 16px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', width: '100%' }}
                 >
                   Use this Photo
                 </button>
@@ -331,6 +385,32 @@ export default function GamePage({ params }) {
               Back to bingo card
             </button>
           </div>
+
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', width: '100%', aspectRatio: '1', position: 'relative' }}>
+                <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {/* Flip camera button - top right */}
+                <button
+                  onClick={flipCamera}
+                  style={{ position: 'absolute', top: '8px', right: '8px', backgroundColor: 'rgba(250,250,249,0.25)', border: 'none', borderRadius: '50px', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                >
+                  <img src="/switch-camera.png" alt="Flip camera" style={{ width: '24px', height: '24px' }} />
+                </button>
+                {/* Zoom buttons - right side middle */}
+                <div style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button
+                    onClick={() => changeZoom('out')}
+                    style={{ backgroundColor: 'rgba(250,250,249,0.25)', border: 'none', borderRadius: '50px', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                  >
+                    <img src="/Minus.png" alt="Zoom out" style={{ width: '24px', height: '24px' }} />
+                  </button>
+                  <button
+                    onClick={() => changeZoom('in')}
+                    style={{ backgroundColor: 'rgba(250,250,249,0.25)', border: 'none', borderRadius: '50px', width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
+                  >
+                    <img src="/Plus.png" alt="Zoom in" style={{ width: '24px', height: '24px' }} />
+                  </button>
+                </div>
+              </div>
         </div>
       )}
 
